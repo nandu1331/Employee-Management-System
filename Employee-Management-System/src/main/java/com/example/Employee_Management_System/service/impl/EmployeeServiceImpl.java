@@ -14,9 +14,9 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.List;
 
 @Service
 @Slf4j
@@ -30,7 +30,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public Employee createEmployee(Employee employee, Set<Long> skillIds, Set<Long> projectIds) {
-        // Set skills if IDs are provided
+        log.info("Creating employee: {}", employee);
         if (skillIds != null && !skillIds.isEmpty()) {
             Set<SkillSet> skills = skillIds.stream()
                     .map(id -> skillSetRepository.findById(id)
@@ -38,7 +38,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                     .collect(Collectors.toSet());
             employee.setSkills(skills);
         }
-        // Set projects if IDs are provided
         if (projectIds != null && !projectIds.isEmpty()) {
             Set<Project> projects = projectIds.stream()
                     .map(id -> projectRepository.findById(id)
@@ -52,20 +51,16 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @CacheEvict(value = "employees", key = "#employeeId")
     public Employee updateEmployee(Long employeeId, Employee employeeDetails, Set<Long> skillIds, Set<Long> projectIds) {
+        log.info("Updating employee with id: {}", employeeId);
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee", "id", employeeId));
-
-        // Update basic fields
         employee.setName(employeeDetails.getName());
         employee.setEmail(employeeDetails.getEmail());
         employee.setRole(employeeDetails.getRole());
         employee.setDepartment(employeeDetails.getDepartment());
-
         if (employeeDetails.getEmployer() != null) {
             employee.setEmployer(employeeDetails.getEmployer());
         }
-
-        // Update skills if provided
         if (skillIds != null) {
             Set<SkillSet> skills = skillIds.stream()
                     .map(id -> skillSetRepository.findById(id)
@@ -73,8 +68,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                     .collect(Collectors.toSet());
             employee.setSkills(skills);
         }
-
-        // Update projects if provided
         if (projectIds != null) {
             Set<Project> projects = projectIds.stream()
                     .map(id -> projectRepository.findById(id)
@@ -82,42 +75,51 @@ public class EmployeeServiceImpl implements EmployeeService {
                     .collect(Collectors.toSet());
             employee.setProjects(projects);
         }
-
         return employeeRepository.save(employee);
     }
 
     @Override
     @CacheEvict(value = "employees", key = "#employeeId")
     public void deleteEmployee(Long employeeId) {
+        log.info("Deleting employee with id: {}", employeeId);
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee", "id", employeeId));
         employeeRepository.delete(employee);
     }
 
     @Override
-    @Cacheable(value = "employees", key = "#employeeId")
+//    @Cacheable(value = "employees", key = "#employeeId")
     public Employee getEmployeeById(Long employeeId) {
+        log.info("Fetching employee with id: {}", employeeId);
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee", "id", employeeId));
-
-        // Force initialization of the lazy-loaded employer
+        // Force initialization of lazy associations
         if (employee.getEmployer() != null) {
             employee.getEmployer().getName();
         }
-
-        // Force initialization of lazy collections
-        employee.getSkills().size();
-        employee.getProjects().size();
+        if (employee.getSkills() != null) {
+            employee.getSkills().size();
+        }
+        if (employee.getProjects() != null) {
+            employee.getProjects().size();
+        }
         return employee;
     }
 
     @Override
     public List<Employee> getAllEmployees() {
+        log.info("Fetching all employees");
         List<Employee> employees = employeeRepository.findAll();
-        // Initialize lazy collections for each employee
         employees.forEach(emp -> {
-            emp.getSkills().size();
-            emp.getProjects().size();
+            if (emp.getEmployer() != null) {
+                emp.getEmployer().getName();
+            }
+            if (emp.getSkills() != null) {
+                emp.getSkills().size();
+            }
+            if (emp.getProjects() != null) {
+                emp.getProjects().size();
+            }
         });
         return employees;
     }

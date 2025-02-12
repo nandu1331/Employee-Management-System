@@ -5,9 +5,7 @@ import com.example.Employee_Management_System.dto.EmployerDTO;
 import com.example.Employee_Management_System.dto.SkillSetDTO;
 import com.example.Employee_Management_System.dto.ProjectDTO;
 import com.example.Employee_Management_System.entity.Employee;
-import com.example.Employee_Management_System.entity.Employer;
-import com.example.Employee_Management_System.entity.SkillSet;
-import com.example.Employee_Management_System.entity.Project;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -16,22 +14,38 @@ public class EmployeeMapper {
     public static EmployeeDTO toDTO(Employee employee) {
         if (employee == null) return null;
 
-        // Convert employer
+        // Convert employer using its mapper
         EmployerDTO employerDTO = EmployerMapper.toDTO(employee.getEmployer());
 
-        // Convert skills
-        Set<SkillSetDTO> skillDTOs = null;
+        // Convert skills (filter out nulls)
+        Set<SkillSetDTO> skillDTOs = new HashSet<>();
         if (employee.getSkills() != null) {
             skillDTOs = employee.getSkills().stream()
                     .map(SkillSetMapper::toDTO)
+                    .filter(dto -> dto != null)
                     .collect(Collectors.toSet());
         }
 
-        // Convert projects
-        Set<ProjectDTO> projectDTOs = null;
+        // Convert projects (filter out nulls)
+        Set<ProjectDTO> projectDTOs = new HashSet<>();
         if (employee.getProjects() != null) {
             projectDTOs = employee.getProjects().stream()
                     .map(ProjectMapper::toDTO)
+                    .filter(dto -> dto != null)
+                    .collect(Collectors.toSet());
+        }
+
+        // Optionally populate the ID sets from the entity associations
+        Set<Long> skillIds = new HashSet<>();
+        if (employee.getSkills() != null) {
+            skillIds = employee.getSkills().stream()
+                    .map(skill -> skill.getId())
+                    .collect(Collectors.toSet());
+        }
+        Set<Long> projectIds = new HashSet<>();
+        if (employee.getProjects() != null) {
+            projectIds = employee.getProjects().stream()
+                    .map(project -> project.getId())
                     .collect(Collectors.toSet());
         }
 
@@ -44,6 +58,8 @@ public class EmployeeMapper {
                 .employer(employerDTO)
                 .skills(skillDTOs)
                 .projects(projectDTOs)
+                .skillIds(skillIds)
+                .projectIds(projectIds)
                 .build();
     }
 
@@ -56,12 +72,10 @@ public class EmployeeMapper {
         employee.setRole(dto.getRole());
         employee.setDepartment(dto.getDepartment());
 
-        // Convert employer if provided
         if (dto.getEmployer() != null) {
             employee.setEmployer(EmployerMapper.toEntity(dto.getEmployer()));
         }
-        // Note: Mapping of collections (skills, projects) can be handled separately in the service layer.
-
+        // We do not set collections (skills, projects) here.
         return employee;
     }
 }

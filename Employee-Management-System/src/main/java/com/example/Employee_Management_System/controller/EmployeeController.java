@@ -24,8 +24,10 @@ public class EmployeeController {
     @PostMapping
     public ResponseEntity<EmployeeDTO> createEmployee(@Valid @RequestBody EmployeeDTO employeeDTO) {
         log.info("Received request to create employee: {}", employeeDTO);
+        // Convert DTO to entity (basic fields)
         Employee employee = EmployeeMapper.toEntity(employeeDTO);
-        Employee createdEmployee = employeeService.createEmployee(employee);
+        // Pass association ID sets to service layer
+        Employee createdEmployee = employeeService.createEmployee(employee, employeeDTO.getSkillIds(), employeeDTO.getProjectIds());
         EmployeeDTO createdEmployeeDTO = EmployeeMapper.toDTO(createdEmployee);
         return new ResponseEntity<>(createdEmployeeDTO, HttpStatus.CREATED);
     }
@@ -53,7 +55,7 @@ public class EmployeeController {
                                                       @Valid @RequestBody EmployeeDTO employeeDTO) {
         log.info("Received request to update employee with id: {}", employeeId);
         Employee employeeToUpdate = EmployeeMapper.toEntity(employeeDTO);
-        Employee updatedEmployee = employeeService.updateEmployee(employeeId, employeeToUpdate);
+        Employee updatedEmployee = employeeService.updateEmployee(employeeId, employeeToUpdate, employeeDTO.getSkillIds(), employeeDTO.getProjectIds());
         EmployeeDTO updatedEmployeeDTO = EmployeeMapper.toDTO(updatedEmployee);
         return ResponseEntity.ok(updatedEmployeeDTO);
     }

@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
@@ -17,6 +18,14 @@ public class EmployeeDTO {
     private String role;
     private String department;
     private EmployerDTO employer;
-    private Set<SkillSetDTO> skills;
-    private Set<ProjectDTO> projects;
+    // Detailed nested objects for response
+    @Builder.Default
+    private Set<SkillSetDTO> skills = new HashSet<>();
+    @Builder.Default
+    private Set<ProjectDTO> projects = new HashSet<>();
+    // Fields for create/update: association IDs
+    @Builder.Default
+    private Set<Long> skillIds = new HashSet<>();
+    @Builder.Default
+    private Set<Long> projectIds = new HashSet<>();
 }
